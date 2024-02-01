@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source helpers.sh
+
 export PYTHONUNBUFFERED=1
 
 echo "Template version: ${TEMPLATE_VERSION}"
@@ -21,6 +23,18 @@ sync_apps() {
     rsync -rlptDu /Fooocus/ /workspace/Fooocus/
 
     echo "${TEMPLATE_VERSION}" > /workspace/template_version
+
+    # Use rclone to sync or mount data from remote storage
+    if [ "$USE_RCLONE" = "enabled" ]; then
+        echo "Starting Rclone script"
+        execute_script "rclone.sh" "Running Rclone script, downloading predefined laras and checkpoints, please wait..."
+    fi
+
+    # Download models from URLs
+    if [ -n "$MODELS_URLS" ]; then
+        echo "Starting model download script"
+        execute_script "model_download.sh" "Running model download script, please wait..."
+    fi
 }
 
 fix_venvs() {

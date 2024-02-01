@@ -5,18 +5,11 @@ set -e  # Exit the script if any statement returns a non-true return value
 #                          Function Definitions                                #
 # ---------------------------------------------------------------------------- #
 
+source helpers.sh
+
 start_nginx() {
     echo "Starting Nginx service..."
     service nginx start
-}
-
-execute_script() {
-    local script_path=$1
-    local script_msg=$2
-    if [[ -f ${script_path} ]]; then
-        echo "${script_msg}"
-        bash ${script_path}
-    fi
 }
 
 setup_ssh() {
