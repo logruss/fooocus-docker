@@ -15,7 +15,7 @@
 #     SFTP_PASS - The SFTP password
 #
 # Required Environment Variables:
-#     WORKING_DIR - The working directory for the script default: /workspace
+#     WORKING_DIR - The working directory for the script default: /
 #
 #   Actions:
 #     loras-only  - Skips downloading any checkpoints and performs only mounting and loras setup.
@@ -33,18 +33,18 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 source $SCRIPT_DIR"/helpers.sh"
 
 # Check if WORKING_DIR is set and not empty, if not set a default value
-WORKING_DIR=${WORKING_DIR:-"workspace"}
+WORKING_DIR=${WORKING_DIR:-"/"}
 
 # Now you can use $WORKING_DIR in your script
 echo "Working directory is set to $WORKING_DIR"
 
 # Data directory
-DATA_DIR="${WORKING_DIR}/data"
+FOOOCUS_DIR="${WORKING_DIR}/Fooocus"
 
 # Fooocus directories to be created
-LORAS_DIR="${DATA_DIR}/loras"
-OUTPUTS_DIR="${DATA_DIR}/outputs"
-CHECKPOINTS_DIR="${DATA_DIR}/checkpoints"
+OUTPUTS_DIR="${FOOOCUS_DIR}/outputs"
+LORAS_DIR="${FOOOCUS_DIR}/models/loras"
+CHECKPOINTS_DIR="${FOOOCUS_DIR}/models/checkpoints"
 
 # Function to check if Rclone is installed
 is_rclone_installed() {
@@ -67,6 +67,7 @@ is_fuse3_installed() {
 install_fuse3() {
     echo "Installing fuse3..."
     apt-get update | bash > /dev/null 2>&1
+    apt-get apt-utils | bash > /dev/null 2>&1
     apt-get install -y fuse3 | bash > /dev/null 2>&1
     echo "fuse3 installed successfully."
 }
@@ -138,16 +139,10 @@ download_model() {
 
 download_folder() {
     local folder_name=$1
-    local folder_path="$DATA_DIR/$1"
     local folder_destination=$2
 
-    echo "Checking if ${folder_path} folder exists..."
-    if [ -z "$(ls -A ${folder_path})" ]; then
-        echo "Starting downloading ${folder_name} folder..."
-        execute_rclone copy "${REMOTE}:${folder_name}" "${folder_destination}"
-    else
-        echo "${folder_name} folder already downloaded."
-    fi
+    echo "Starting downloading ${folder_name} folder from remote into ${folder_destination}..."
+    execute_rclone copy "${REMOTE}:${folder_name}" "${folder_destination}"
 }
 
 
@@ -197,16 +192,6 @@ else
     download_folder "loras" "${LORAS_DIR}"
     handle_model_downloads "$@"
 fi
-
-declare -A directories=(
-    ["loras"]="/${WORKING_DIR}/Fooocus/models/loras"
-    ["outputs"]="/${WORKING_DIR}/Fooocus/outputs"
-    ["checkpoints"]="/${WORKING_DIR}/Fooocus/models/checkpoints"
-)
-
-for key in "${!directories[@]}"; do
-    create_symlink "/${DATA_DIR}/${key}" "${directories[$key]}" "$key"
-done
 
 # Exit with success
 echo "Script completed at $(date)"

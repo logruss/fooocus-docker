@@ -19,10 +19,10 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 source $SCRIPT_DIR"/helpers.sh"
 
 # Set the working directory
-WORKING_DIR=${WORKING_DIR:-"/workspace"}
+WORKING_DIR=${WORKING_DIR:-"/"}
 
-DATA_DIR="${WORKING_DIR}/data"
-CHECKPOINTS_DIR="${DATA_DIR}/checkpoints"
+FOOOCUS_DIR_DIR="${WORKING_DIR}/Fooocus"
+CHECKPOINTS_DIR="${FOOOCUS_DIR_DIR}/models/checkpoints"
 
 # Ensure the models directory exists
 create_dir "${CHECKPOINTS_DIR}"
