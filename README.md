@@ -81,6 +81,22 @@ Note: The downloaded model will be saved in the WORKING_DIR/data/checkpoints dir
 | `MODELS_URLS` | Specifies the URLs from which to download files. These should be space-separated. For example: https://example.com/model1 https://example.com/model2                             | (not set) |
 | `M_API_TOKEN` | The authorization token required by the URL, if any. Note that only a single token can be used, implying that all URLs in MODELS_URLS must be accessible from the same provider. | (not set) |
 
+### Rclone usage
+
+Rclone can be used from terminal or Jupiter notebook. The following command can be used to mount the remote directory to the local directory, download the models, and upload the generated images to the remote directory.
+The script will also run at the start of the container, `loras` and the models that are specified in the `CHECKPOINTS_TO_DOWNLOAD` variable will be downloaded automatically.
+
+> NOTE: Rclone `mount` command does not work on RunPod due to security restrictions.
+
+```bash
+  ./rclone.sh [--mount] [--backup] [model names]
+```
+
+Actions:
+--mount - Optionally mount the 'outputs' directory.
+--loras-only - Skips downloading any checkpoints and performs only specified actions.
+--backup - Backup '/Fooocus/outputs' and move it to the remote server '/outputs' folder.
+
 ## Logs
 
 Fooocus creates a log file, and you can tail the log instead of

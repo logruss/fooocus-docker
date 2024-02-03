@@ -3,10 +3,11 @@
 # Script Name: Data Management Script for Rclone
 # Description: This script automates the process of setting up and managing data directories
 #              using Rclone. It checks for and installs Rclone and fuse3 if they are not present.
-#              The script can mount directories, and download specific models based on the given action.
+#              The script can optionally mount directories, and download specific models based on the given action,
+#              and also backup outputs to a remote server.
 #
 # Usage:
-#   ./setup.sh [action]
+#   ./rclone.sh [--mount] [--backup] [model names]
 #
 # Required Environment Rclone Variables:
 #     REMOTE    - The remote name for Rclone
@@ -18,11 +19,9 @@
 #     WORKING_DIR - The working directory for the script default: /
 #
 #   Actions:
-#     loras-only  - Skips downloading any checkpoints and performs only mounting and loras setup.
-#     (no action) - Performs standard operations including default model download.
-#
-#   Standard operations include checking/installing Rclone and fuse3, creating necessary directories,
-#   mounting the 'outputs' directory, and managing model downloads in 'checkpoints' directory.
+#     --mount    - Optionally mount the 'outputs' directory.
+#     --backup   - Backup '/Fooocus/outputs' and move it to the remote server '/outputs' folder.
+#     loras-only - Skips downloading any checkpoints and performs only specified actions.
 #
 # Prerequisites:
 #   - This script requires 'curl' for installation processes.
@@ -46,6 +45,23 @@ OUTPUTS_DIR="${FOOOCUS_DIR}/outputs"
 LORAS_DIR="${FOOOCUS_DIR}/models/loras"
 CHECKPOINTS_DIR="${FOOOCUS_DIR}/models/checkpoints"
 
+
+should_mount=false
+should_backup=false
+exclusive_action=""
+declare -a model_names
+
+# Parse command-line options
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --mount) should_mount=true; exclusive_action="mount"; ;;
+        --backup) should_backup=true; exclusive_action="backup"; ;;
+        loras-only) exclusive_action="loras-only"; ;;
+        *) model_names+=("$1") ;;
+    esac
+    shift
+done
+
 # Function to check if Rclone is installed
 is_rclone_installed() {
     command -v rclone >/dev/null 2>&1
@@ -67,19 +83,14 @@ is_fuse3_installed() {
 install_fuse3() {
     echo "Installing fuse3..."
     apt-get update | bash > /dev/null 2>&1
-    apt-get apt-utils | bash > /dev/null 2>&1
     apt-get install -y fuse3 | bash > /dev/null 2>&1
     echo "fuse3 installed successfully."
 }
 
 # Ensure Rclone and fuse3 are installed before proceeding
 while ! is_rclone_installed || ! is_fuse3_installed; do
-    if ! is_rclone_installed; then
-        install_rclone
-    fi
-    if ! is_fuse3_installed; then
-        install_fuse3
-    fi
+    ! is_rclone_installed && install_rclone
+    ! is_fuse3_installed && install_fuse3
     sleep 20
 done
 
@@ -166,6 +177,14 @@ handle_model_downloads() {
     fi
 }
 
+backup_outputs() {
+    local archive_name="outputs_$(date +%Y%m%d_%H%M%S).tar.gz"
+    tar -czvf "${FOOOCUS_DIR}/${archive_name}" -C "${OUTPUTS_DIR}" .
+    execute_rclone move "${FOOOCUS_DIR}/${archive_name}" "${REMOTE}:outputs"
+    echo "Backup of outputs completed."
+}
+
+
 # Create rclone.conf
 create_rclone_conf
 # Create directories
@@ -173,25 +192,31 @@ create_dir "${LORAS_DIR}"
 create_dir "${OUTPUTS_DIR}"
 create_dir "${CHECKPOINTS_DIR}"
 
-# Mount outputs directory
-# Mount only current data directory if it is not already mounted
-if ! mountpoint -q "${OUTPUTS_DIR}"; then
-    echo "Mounting ${OUTPUTS_DIR} directory..."
-    execute_rclone mount "${REMOTE}:outputs" "${OUTPUTS_DIR}" --daemon
-    echo "${OUTPUTS_DIR} directory mounted successfully."
-else
-    echo "${OUTPUTS_DIR} directory is already mounted."
-fi
 
-# Handle different actions
-if [ "$1" = "loras-only" ]; then
-    echo "Skipping checkpoint downloads as per 'loras-only' action."
-    download_folder "loras" "${LORAS_DIR}"
-else
-    # If the first argument is not 'loras-only', download them and assume all arguments are model names
-    download_folder "loras" "${LORAS_DIR}"
-    handle_model_downloads "$@"
-fi
+case $exclusive_action in
+    mount)
+        if ! mountpoint -q "${OUTPUTS_DIR}"; then
+            echo "Mounting ${OUTPUTS_DIR} directory..."
+            execute_rclone mount "${REMOTE}:outputs" "${OUTPUTS_DIR}" --daemon
+            echo "${OUTPUTS_DIR} directory mounted successfully."
+        else
+            echo "${OUTPUTS_DIR} directory is already mounted."
+        fi
+        ;;
+    backup)
+        backup_outputs
+        ;;
+    loras-only)
+        echo "Executing 'loras-only' action."
+        download_folder "loras" "${LORAS_DIR}"
+        ;;
+    *)
+        # Default action: download "loras" and handle model downloads
+        echo "Default action: downloading 'loras' folder and handling model downloads."
+        download_folder "loras" "${LORAS_DIR}"
+        handle_model_downloads
+        ;;
+esac
 
 # Exit with success
 echo "Script completed at $(date)"
