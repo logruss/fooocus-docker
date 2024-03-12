@@ -19,9 +19,9 @@
 #     WORKING_DIR - The working directory for the script default: /
 #
 #   Actions:
-#     --mount    - Optionally mount the 'outputs' directory.
-#     --backup   - Backup '/Fooocus/outputs' and move it to the remote server '/outputs' folder.
-#     loras-only - Skips downloading any checkpoints and performs only specified actions.
+#     --mount       - Optionally mount the 'outputs' directory.
+#     --backup      - Backup '/Fooocus/outputs' and move it to the remote server '/outputs' folder.
+#     --loras-only  - Skips downloading any checkpoints and performs only specified actions.
 #
 # Prerequisites:
 #   - This script requires 'curl' for installation processes.
@@ -43,6 +43,7 @@ FOOOCUS_DIR="${WORKING_DIR}/Fooocus"
 # Fooocus directories to be created
 OUTPUTS_DIR="${FOOOCUS_DIR}/outputs"
 LORAS_DIR="${FOOOCUS_DIR}/models/loras"
+WILDCARDS_DIR="${FOOOCUS_DIR}/wildcards"
 CHECKPOINTS_DIR="${FOOOCUS_DIR}/models/checkpoints"
 
 
@@ -190,6 +191,7 @@ create_rclone_conf
 # Create directories
 create_dir "${LORAS_DIR}"
 create_dir "${OUTPUTS_DIR}"
+create_dir "${WILDCARDS_DIR}"
 create_dir "${CHECKPOINTS_DIR}"
 
 
@@ -214,6 +216,7 @@ case $exclusive_action in
         # Default action: download "loras" and handle model downloads
         echo "Default action: downloading 'loras' folder and handling model downloads."
         download_folder "loras" "${LORAS_DIR}"
+        download_folder "wildcards" "${WILDCARDS_DIR}"
         handle_model_downloads
         ;;
 esac
