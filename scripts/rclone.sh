@@ -217,6 +217,8 @@ case $exclusive_action in
         echo "Default action: downloading 'loras' folder and handling model downloads."
         download_folder "loras" "${LORAS_DIR}"
         download_folder "wildcards" "${WILDCARDS_DIR}"
+        # Copy config file to the fooocus directory
+        execute_rclone copy "${REMOTE}:config.txt" "${FOOOCUS_DIR}"
         handle_model_downloads
         ;;
 esac
