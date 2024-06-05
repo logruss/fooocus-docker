@@ -62,7 +62,7 @@ then
     echo ""
     echo "   cd /workspace/Fooocus"
     echo "   deactivate && source /workspace/venv/bin/activate"
-    echo "   python3 entry_with_update.py --listen --port 3001"
+    echo "   python3 launch.py --listen --port 3001"
 else
     echo "Starting Fooocus"
     export HF_HOME="/workspace"
@@ -72,10 +72,10 @@ else
     if [[ ${PRESET} ]]
     then
         echo "Starting Fooocus using preset: ${PRESET}"
-        nohup python3 entry_with_update.py --listen --port 3001 --preset ${PRESET} > /workspace/logs/fooocus.log 2>&1 &
+        nohup python3 launch.py --listen --port 3001 --preset ${PRESET} > /workspace/logs/fooocus.log 2>&1 &
     else
         echo "Starting Fooocus using defaults"
-        nohup python3 entry_with_update.py --listen --port 3001 > /workspace/logs/fooocus.log 2>&1 &
+        nohup python3 launch.py --listen --port 3001 > /workspace/logs/fooocus.log 2>&1 &
     fi
 
     echo "Fooocus started"
